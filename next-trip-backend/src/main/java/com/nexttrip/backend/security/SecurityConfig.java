@@ -43,6 +43,7 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/weather/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/flights/**").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/destinations/**").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/recommendations/**").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/destinations").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.PUT, "/api/destinations/**").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.DELETE, "/api/destinations/**").hasRole("ADMIN")

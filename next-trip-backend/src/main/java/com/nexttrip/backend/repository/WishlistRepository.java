@@ -9,4 +9,6 @@ import com.nexttrip.backend.model.Wishlist;
 public interface WishlistRepository extends MongoRepository<Wishlist, String> {
 
 	Optional<Wishlist> findByUserId(String userId);
+
+	boolean existsByUserId(String userId);
 }

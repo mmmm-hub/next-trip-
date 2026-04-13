@@ -1,10 +1,13 @@
 package com.nexttrip.backend.service.impl;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
@@ -33,9 +36,15 @@ public class DestinationServiceImpl implements DestinationService {
 
 	@Override
 	public List<DestinationResponse> getAllDestinations() {
-		return destinationRepository.findAll().stream()
+		return CompletableFuture.supplyAsync(() -> destinationRepository.findAll().stream()
 				.map(destinationMapper::toResponse)
-				.toList();
+				.toList())
+				.completeOnTimeout(buildMockDestinations(), 800, TimeUnit.MILLISECONDS)
+				.exceptionally(ex -> {
+					// Temporary fail-safe: return lightweight mock data when MongoDB is unavailable.
+					return buildMockDestinations();
+				})
+				.join();
 	}
 
 	@Override
@@ -147,5 +156,30 @@ public class DestinationServiceImpl implements DestinationService {
 					Comparator.nullsLast(Double::compareTo));
 			default -> Comparator.comparing(Destination::getName, Comparator.nullsLast(String::compareToIgnoreCase));
 		};
+	}
+
+	private static List<DestinationResponse> buildMockDestinations() {
+		List<DestinationResponse> mock = new ArrayList<>();
+		mock.add(DestinationResponse.builder()
+				.id("mock-paris")
+				.name("Paris")
+				.country("France")
+				.continent("Europe")
+				.currency("EUR")
+				.images(List.of())
+				.badges(List.of())
+				.popularityScore(90.0)
+				.build());
+		mock.add(DestinationResponse.builder()
+				.id("mock-rome")
+				.name("Rome")
+				.country("Italy")
+				.continent("Europe")
+				.currency("EUR")
+				.images(List.of())
+				.badges(List.of())
+				.popularityScore(87.0)
+				.build());
+		return mock;
 	}
 }

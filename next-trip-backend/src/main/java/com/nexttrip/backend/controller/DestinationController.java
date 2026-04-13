@@ -35,6 +35,11 @@ public class DestinationController {
 		return ResponseEntity.ok(destinationService.getAllDestinations());
 	}
 
+	@GetMapping("/test")
+	public String test() {
+		return "API is working";
+	}
+
 	@GetMapping("/{id}")
 	public ResponseEntity<DestinationDetailsResponse> getById(@PathVariable String id) {
 		return ResponseEntity.ok(destinationService.getDestinationById(id));
