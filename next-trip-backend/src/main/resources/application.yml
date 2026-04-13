@@ -1,13 +1,2 @@
-spring:
-  application:
-    name: nexttrip-backend
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/next_trip
-
-server:
-  port: 8080
-
-# Comma-separated browser origins allowed to call this API (required when using credentials).
-cors:
-  allowed-origins: "http://localhost:4200,http://localhost:3000,http://localhost:5173"
+# Configuration principale dans application.properties (MongoDB, port, JWT).
+# Ce fichier est laissé minimal pour éviter les doublons ; utilisez des profils si besoin.

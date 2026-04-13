@@ -8,12 +8,15 @@ import org.springframework.stereotype.Service;
 
 import com.nexttrip.backend.dto.response.DestinationResponse;
 import com.nexttrip.backend.dto.response.WishlistResponse;
+import org.springframework.security.access.AccessDeniedException;
+
 import com.nexttrip.backend.exception.ResourceNotFoundException;
 import com.nexttrip.backend.mapper.DestinationMapper;
 import com.nexttrip.backend.model.Destination;
 import com.nexttrip.backend.model.Wishlist;
 import com.nexttrip.backend.repository.DestinationRepository;
 import com.nexttrip.backend.repository.WishlistRepository;
+import com.nexttrip.backend.security.SecurityUtils;
 import com.nexttrip.backend.service.WishlistService;
 
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ public class WishlistServiceImpl implements WishlistService {
 
 	@Override
 	public WishlistResponse getWishlistByUserId(String userId) {
+		assertOwner(userId);
 		Wishlist wishlist = wishlistRepository.findByUserId(userId)
 				.orElseGet(() -> Wishlist.builder().userId(userId).destinationIds(new ArrayList<>()).build());
 		return toResponse(wishlist);
@@ -35,6 +39,7 @@ public class WishlistServiceImpl implements WishlistService {
 
 	@Override
 	public WishlistResponse addDestinationToWishlist(String userId, String destinationId) {
+		assertOwner(userId);
 		if (!destinationRepository.existsById(destinationId)) {
 			throw new ResourceNotFoundException("Destination", destinationId);
 		}
@@ -54,6 +59,7 @@ public class WishlistServiceImpl implements WishlistService {
 
 	@Override
 	public WishlistResponse removeDestinationFromWishlist(String userId, String destinationId) {
+		assertOwner(userId);
 		Optional<Wishlist> opt = wishlistRepository.findByUserId(userId);
 		if (opt.isEmpty()) {
 			throw new ResourceNotFoundException("Wishlist for user not found: " + userId);
@@ -65,6 +71,13 @@ public class WishlistServiceImpl implements WishlistService {
 		}
 		Wishlist saved = wishlistRepository.save(wishlist);
 		return toResponse(saved);
+	}
+
+	private static void assertOwner(String userId) {
+		String email = SecurityUtils.currentUserEmail();
+		if (email == null || !email.equalsIgnoreCase(userId)) {
+			throw new AccessDeniedException("Wishlist accessible uniquement pour le compte connecté");
+		}
 	}
 
 	private WishlistResponse toResponse(Wishlist wishlist) {

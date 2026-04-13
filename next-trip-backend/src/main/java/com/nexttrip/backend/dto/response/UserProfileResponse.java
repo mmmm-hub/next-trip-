@@ -1,12 +1,10 @@
-package com.nexttrip.backend.model;
+package com.nexttrip.backend.dto.response;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+import com.nexttrip.backend.model.UserRole;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,23 +15,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "users")
-public class User {
+public class UserProfileResponse {
 
-	@Id
 	private String id;
-
-	private String fullName;
-
-	@Indexed(unique = true)
 	private String email;
+	private String fullName;
+	private UserRole role;
 
-	private String password;
-
-	@Builder.Default
-	private UserRole role = UserRole.USER;
-
-	/** Préférences pour recommandations IA (tags climat / ambiance, budgets). */
 	@Builder.Default
 	private List<String> preferredClimateTags = new ArrayList<>();
 	@Builder.Default

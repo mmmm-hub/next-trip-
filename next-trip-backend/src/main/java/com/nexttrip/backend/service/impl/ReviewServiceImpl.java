@@ -48,9 +48,10 @@ public class ReviewServiceImpl implements ReviewService {
 
 	private ReviewResponse toResponseWithAuthor(Review review) {
 		ReviewResponse response = reviewMapper.toResponse(review);
-		userRepository.findById(review.getUserId())
+		String author = userRepository.findByEmailIgnoreCase(review.getUserId())
 				.map(User::getFullName)
-				.ifPresent(response::setAuthorName);
+				.orElseGet(() -> userRepository.findById(review.getUserId()).map(User::getFullName).orElse(null));
+		response.setAuthorName(author);
 		return response;
 	}
 }

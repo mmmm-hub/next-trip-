@@ -1,5 +1,6 @@
 package com.nexttrip.backend.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -8,32 +9,77 @@ import org.springframework.stereotype.Service;
 
 import com.nexttrip.backend.dto.request.AiRequest;
 import com.nexttrip.backend.dto.response.AiResponse;
+import com.nexttrip.backend.model.User;
+import com.nexttrip.backend.repository.UserRepository;
+import com.nexttrip.backend.security.SecurityUtils;
 import com.nexttrip.backend.service.AiService;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class AiServiceImpl implements AiService {
 
-	/** Évite les faux positifs (ex. 1600) en exigeant que 600 soit un « mot » numérique. */
 	private static final Pattern MOCK_BUDGET_600 = Pattern.compile("(^|\\D)600(\\D|$)");
+
+	private final UserRepository userRepository;
 
 	@Override
 	public AiResponse askQuestion(AiRequest request) {
-		return buildMockResponse(request.getMessage());
+		AiResponse base = buildMockResponse(request.getMessage());
+		return personalize(base);
 	}
 
 	@Override
 	public AiResponse generatePlan(AiRequest request) {
 		String msg = request.getMessage();
 		if (containsIgnoreCase(msg, "Rome")) {
-			return AiResponse.builder()
+			AiResponse r = AiResponse.builder()
 					.success(true)
 					.message("Itinéraire suggéré (mock) pour Rome : jour 1 — Colisée & Forum ; jour 2 — Vatican ; jour 3 — Trastevere.")
 					.suggestions(List.of(
 							"Réserver le Vatican en ligne",
 							"Marcher tôt le matin pour éviter la foule au Colisée"))
 					.build();
+			return personalize(r);
 		}
-		return buildMockResponse(msg);
+		return personalize(buildMockResponse(msg));
+	}
+
+	private AiResponse personalize(AiResponse base) {
+		String email = SecurityUtils.currentUserEmail();
+		if (email == null) {
+			return base;
+		}
+		return userRepository.findByEmailIgnoreCase(email)
+				.map(u -> applyPrefs(base, u))
+				.orElse(base);
+	}
+
+	private static AiResponse applyPrefs(AiResponse base, User u) {
+		List<String> extra = new ArrayList<>();
+		if (u.getPreferredClimateTags() != null && !u.getPreferredClimateTags().isEmpty()) {
+			extra.add("Climats qui vous intéressent : " + String.join(", ", u.getPreferredClimateTags()));
+		}
+		if (u.getPreferredAmbianceTags() != null && !u.getPreferredAmbianceTags().isEmpty()) {
+			extra.add("Ambiances : " + String.join(", ", u.getPreferredAmbianceTags()));
+		}
+		if (u.getBudgetMin() != null || u.getBudgetMax() != null) {
+			extra.add("Budget indicatif enregistré : "
+					+ (u.getBudgetMin() != null ? u.getBudgetMin() + " " : "")
+					+ "— "
+					+ (u.getBudgetMax() != null ? u.getBudgetMax() : ""));
+		}
+		if (extra.isEmpty()) {
+			return base;
+		}
+		String enriched = base.getMessage() + "\n\n— Conseils basés sur votre profil —\n" + String.join("\n", extra);
+		List<String> sug = base.getSuggestions() != null ? base.getSuggestions() : List.of();
+		return AiResponse.builder()
+				.success(base.isSuccess())
+				.message(enriched)
+				.suggestions(sug)
+				.build();
 	}
 
 	private static AiResponse buildMockResponse(String raw) {

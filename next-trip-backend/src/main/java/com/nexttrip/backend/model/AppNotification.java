@@ -1,10 +1,9 @@
 package com.nexttrip.backend.model;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.AllArgsConstructor;
@@ -16,19 +15,19 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "search_logs")
-public class SearchLog {
+@Document(collection = "notifications")
+public class AppNotification {
 
 	@Id
 	private String id;
 
-	/** Email utilisateur (JWT) si recherche connectée. */
-	private String userId;
+	@Indexed
+	private String userEmail;
+
+	private String message;
 
 	@Builder.Default
-	private Map<String, Object> filters = new HashMap<>();
-
-	private Integer resultCount;
+	private boolean read = false;
 
 	private Instant createdAt;
 }
