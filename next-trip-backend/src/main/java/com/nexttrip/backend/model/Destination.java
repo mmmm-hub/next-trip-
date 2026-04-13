@@ -33,6 +33,9 @@ public class Destination {
 
 	private String climate;
 
+	/** Saison idéale (libellé court, ex. été) */
+	private String season;
+
 	@Builder.Default
 	private List<String> seasonTags = new ArrayList<>();
 	@Builder.Default
@@ -47,6 +50,14 @@ public class Destination {
 
 	@Builder.Default
 	private List<String> badges = new ArrayList<>();
+
+	/** Ambiances / vibes marketing (affichage catalogue) */
+	@Builder.Default
+	private List<String> vibes = new ArrayList<>();
+
+	/** Tags libres (thèmes, mots-clés) */
+	@Builder.Default
+	private List<String> tags = new ArrayList<>();
 
 	private Double popularityScore;
 

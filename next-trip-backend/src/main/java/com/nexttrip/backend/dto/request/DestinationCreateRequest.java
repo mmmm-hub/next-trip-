@@ -34,10 +34,16 @@ public class DestinationCreateRequest {
 
 	private String climate;
 
+	private String season;
+
 	@Builder.Default
 	private List<String> seasonTags = new ArrayList<>();
 	@Builder.Default
 	private List<String> ambianceTags = new ArrayList<>();
+	@Builder.Default
+	private List<String> vibes = new ArrayList<>();
+	@Builder.Default
+	private List<String> tags = new ArrayList<>();
 	@Builder.Default
 	private List<String> activities = new ArrayList<>();
 	@Builder.Default

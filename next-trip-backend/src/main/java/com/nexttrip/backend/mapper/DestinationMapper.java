@@ -17,26 +17,48 @@ import com.nexttrip.backend.model.Destination;
 public class DestinationMapper {
 
 	public DestinationResponse toResponse(Destination destination) {
+		List<String> imgs = listOrEmpty(destination.getImages());
+		String primaryImage = imgs.isEmpty() ? null : imgs.get(0);
+		List<String> vibeList = resolveVibes(destination);
 		return DestinationResponse.builder()
 				.id(destination.getId())
 				.name(destination.getName())
 				.country(destination.getCountry())
 				.continent(destination.getContinent())
+				.description(destination.getDescription())
 				.priceFrom(destination.getPriceFrom())
 				.currency(destination.getCurrency())
 				.climate(destination.getClimate())
-				.images(listOrEmpty(destination.getImages()))
+				.season(destination.getSeason())
+				.seasonTags(listOrEmpty(destination.getSeasonTags()))
+				.vibes(vibeList)
+				.tags(listOrEmpty(destination.getTags()))
+				.activities(listOrEmpty(destination.getActivities()))
+				.images(imgs)
+				.imageUrls(new ArrayList<>(imgs))
+				.image(primaryImage)
 				.badges(listOrEmpty(destination.getBadges()))
 				.popularityScore(destination.getPopularityScore())
 				.visaRequired(destination.getVisaRequired())
 				.promoted(destination.getPromoted())
+				.latitude(destination.getLatitude())
+				.longitude(destination.getLongitude())
 				.build();
+	}
+
+	private static List<String> resolveVibes(Destination destination) {
+		List<String> v = listOrEmpty(destination.getVibes());
+		if (!v.isEmpty()) {
+			return v;
+		}
+		return listOrEmpty(destination.getAmbianceTags());
 	}
 
 	/**
 	 * Cartographie complète d'une destination (sans agrégats avis — renseignés côté service si besoin).
 	 */
 	public DestinationDetailsResponse toDetailsResponse(Destination destination) {
+		List<String> imgs = listOrEmpty(destination.getImages());
 		return DestinationDetailsResponse.builder()
 				.id(destination.getId())
 				.name(destination.getName())
@@ -47,10 +69,14 @@ public class DestinationMapper {
 				.averageHotelPrice(destination.getAverageHotelPrice())
 				.currency(destination.getCurrency())
 				.climate(destination.getClimate())
+				.season(destination.getSeason())
 				.seasonTags(listOrEmpty(destination.getSeasonTags()))
 				.ambianceTags(listOrEmpty(destination.getAmbianceTags()))
+				.vibes(resolveVibes(destination))
+				.tags(listOrEmpty(destination.getTags()))
 				.activities(listOrEmpty(destination.getActivities()))
-				.images(listOrEmpty(destination.getImages()))
+				.images(imgs)
+				.imageUrls(new ArrayList<>(imgs))
 				.latitude(destination.getLatitude())
 				.longitude(destination.getLongitude())
 				.badges(listOrEmpty(destination.getBadges()))
@@ -70,8 +96,11 @@ public class DestinationMapper {
 				.averageHotelPrice(request.getAverageHotelPrice())
 				.currency(request.getCurrency())
 				.climate(request.getClimate())
+				.season(request.getSeason())
 				.seasonTags(copyList(request.getSeasonTags()))
 				.ambianceTags(copyList(request.getAmbianceTags()))
+				.vibes(copyList(request.getVibes()))
+				.tags(copyList(request.getTags()))
 				.activities(copyList(request.getActivities()))
 				.images(copyList(request.getImages()))
 				.latitude(request.getLatitude())
@@ -108,11 +137,20 @@ public class DestinationMapper {
 		if (request.getClimate() != null) {
 			destination.setClimate(request.getClimate());
 		}
+		if (request.getSeason() != null) {
+			destination.setSeason(request.getSeason());
+		}
 		if (request.getSeasonTags() != null) {
 			destination.setSeasonTags(copyList(request.getSeasonTags()));
 		}
 		if (request.getAmbianceTags() != null) {
 			destination.setAmbianceTags(copyList(request.getAmbianceTags()));
+		}
+		if (request.getVibes() != null) {
+			destination.setVibes(copyList(request.getVibes()));
+		}
+		if (request.getTags() != null) {
+			destination.setTags(copyList(request.getTags()));
 		}
 		if (request.getActivities() != null) {
 			destination.setActivities(copyList(request.getActivities()));

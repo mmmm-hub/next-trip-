@@ -25,8 +25,12 @@ public class DestinationUpdateRequest {
 
 	private String climate;
 
+	private String season;
+
 	private List<String> seasonTags;
 	private List<String> ambianceTags;
+	private List<String> vibes;
+	private List<String> tags;
 	private List<String> activities;
 	private List<String> images;
 

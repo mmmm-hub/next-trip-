@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
@@ -36,15 +38,45 @@ public class DestinationServiceImpl implements DestinationService {
 
 	@Override
 	public List<DestinationResponse> getAllDestinations() {
-		return CompletableFuture.supplyAsync(() -> destinationRepository.findAll().stream()
-				.map(destinationMapper::toResponse)
-				.toList())
+		return CompletableFuture.supplyAsync(() -> {
+					List<DestinationResponse> list = destinationRepository.findAll().stream()
+							.map(destinationMapper::toResponse)
+							.toList();
+					enrichReviewStats(list);
+					return list;
+				})
 				.completeOnTimeout(buildMockDestinations(), 800, TimeUnit.MILLISECONDS)
 				.exceptionally(ex -> {
-					// Temporary fail-safe: return lightweight mock data when MongoDB is unavailable.
-					return buildMockDestinations();
+					List<DestinationResponse> mock = buildMockDestinations();
+					enrichReviewStats(mock);
+					return mock;
 				})
 				.join();
+	}
+
+	private void enrichReviewStats(List<DestinationResponse> responses) {
+		if (responses == null || responses.isEmpty()) {
+			return;
+		}
+		List<Review> all;
+		try {
+			all = reviewRepository.findAll();
+		} catch (Exception ex) {
+			return;
+		}
+		Map<String, List<Integer>> byDestination = all.stream()
+				.filter(r -> r.getDestinationId() != null && r.getRating() != null)
+				.collect(Collectors.groupingBy(
+						Review::getDestinationId,
+						Collectors.mapping(Review::getRating, Collectors.toList())));
+		for (DestinationResponse r : responses) {
+			List<Integer> ratings = byDestination.getOrDefault(r.getId(), List.of());
+			if (ratings.isEmpty()) {
+				continue;
+			}
+			r.setReviews(ratings.size());
+			r.setRating(ratings.stream().mapToInt(Integer::intValue).average().orElse(0.0));
+		}
 	}
 
 	@Override
@@ -130,14 +162,14 @@ public class DestinationServiceImpl implements DestinationService {
 				.sorted(comparator)
 				.map(destinationMapper::toResponse)
 				.toList();
+		enrichReviewStats(list);
 		return list;
 	}
 
 	private static boolean matchesAmbiance(Destination d, String needle) {
-		if (d.getAmbianceTags() == null) {
-			return false;
-		}
-		return d.getAmbianceTags().stream()
+		return Stream.of(d.getAmbianceTags(), d.getVibes(), d.getTags())
+				.filter(Objects::nonNull)
+				.flatMap(List::stream)
 				.filter(Objects::nonNull)
 				.map(s -> s.toLowerCase(Locale.ROOT))
 				.anyMatch(tag -> tag.contains(needle));
@@ -165,20 +197,52 @@ public class DestinationServiceImpl implements DestinationService {
 				.name("Paris")
 				.country("France")
 				.continent("Europe")
+				.description("Capitale culturelle.")
+				.priceFrom(BigDecimal.valueOf(1200))
 				.currency("EUR")
-				.images(List.of())
+				.climate("Tempéré")
+				.season("automne")
+				.seasonTags(List.of("printemps", "automne"))
+				.vibes(List.of("Culturel", "Romantique"))
+				.tags(List.of("city-break"))
+				.activities(List.of("Musées", "Gastronomie"))
+				.images(List.of(
+						"https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=70"))
+				.imageUrls(List.of(
+						"https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=70"))
+				.image("https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=70")
 				.badges(List.of())
 				.popularityScore(90.0)
+				.rating(4.6)
+				.reviews(210)
+				.latitude(48.8566)
+				.longitude(2.3522)
 				.build());
 		mock.add(DestinationResponse.builder()
 				.id("mock-rome")
 				.name("Rome")
 				.country("Italy")
 				.continent("Europe")
+				.description("Histoire et dolce vita.")
+				.priceFrom(BigDecimal.valueOf(990))
 				.currency("EUR")
-				.images(List.of())
+				.climate("Méditerranéen")
+				.season("été")
+				.seasonTags(List.of("printemps", "été"))
+				.vibes(List.of("Culturel", "Gastronomie"))
+				.tags(List.of("patrimoine"))
+				.activities(List.of("Antiquité", "Cuisine"))
+				.images(List.of(
+						"https://images.unsplash.com/photo-1552832230-0197db3ec960?auto=format&fit=crop&w=800&q=70"))
+				.imageUrls(List.of(
+						"https://images.unsplash.com/photo-1552832230-0197db3ec960?auto=format&fit=crop&w=800&q=70"))
+				.image("https://images.unsplash.com/photo-1552832230-0197db3ec960?auto=format&fit=crop&w=800&q=70")
 				.badges(List.of())
 				.popularityScore(87.0)
+				.rating(4.5)
+				.reviews(185)
+				.latitude(41.9028)
+				.longitude(12.4964)
 				.build());
 		return mock;
 	}
