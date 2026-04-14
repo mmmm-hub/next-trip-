@@ -33,6 +33,7 @@ public class DestinationUpdateRequest {
 	private List<String> tags;
 	private List<String> activities;
 	private List<String> images;
+	private List<String> imageUrls;
 
 	private Double latitude;
 	private Double longitude;

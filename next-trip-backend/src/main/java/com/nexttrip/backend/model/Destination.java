@@ -44,6 +44,8 @@ public class Destination {
 	private List<String> activities = new ArrayList<>();
 	@Builder.Default
 	private List<String> images = new ArrayList<>();
+	@Builder.Default
+	private List<String> imageUrls = new ArrayList<>();
 
 	private Double latitude;
 	private Double longitude;
