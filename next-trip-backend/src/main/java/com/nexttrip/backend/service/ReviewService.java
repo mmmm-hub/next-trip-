@@ -10,4 +10,6 @@ public interface ReviewService {
 	List<ReviewResponse> getReviewsByDestinationId(String destinationId);
 
 	ReviewResponse addReview(String destinationId, String userId, ReviewRequest request);
+
+	void deleteReview(String destinationId, String reviewId, String requesterEmail);
 }

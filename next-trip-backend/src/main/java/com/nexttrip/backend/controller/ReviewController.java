@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,5 +47,18 @@ public class ReviewController {
 		}
 		ReviewResponse created = reviewService.addReview(destinationId, email, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(created);
+	}
+
+	@DeleteMapping("/{reviewId}")
+	public ResponseEntity<Void> delete(
+			@PathVariable String destinationId,
+			@PathVariable String reviewId,
+			Authentication authentication) {
+		String email = authentication != null ? authentication.getName() : null;
+		if (email == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}
+		reviewService.deleteReview(destinationId, reviewId, email);
+		return ResponseEntity.noContent().build();
 	}
 }

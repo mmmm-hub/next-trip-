@@ -3,6 +3,7 @@ package com.nexttrip.backend.service.impl;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
 
 import com.nexttrip.backend.dto.request.ReviewRequest;
 import com.nexttrip.backend.dto.response.ReviewResponse;
@@ -10,6 +11,7 @@ import com.nexttrip.backend.exception.ResourceNotFoundException;
 import com.nexttrip.backend.mapper.ReviewMapper;
 import com.nexttrip.backend.model.Review;
 import com.nexttrip.backend.model.User;
+import com.nexttrip.backend.model.UserRole;
 import com.nexttrip.backend.repository.DestinationRepository;
 import com.nexttrip.backend.repository.ReviewRepository;
 import com.nexttrip.backend.repository.UserRepository;
@@ -44,6 +46,29 @@ public class ReviewServiceImpl implements ReviewService {
 		Review entity = reviewMapper.toEntity(request, destinationId, userId);
 		Review saved = reviewRepository.save(entity);
 		return toResponseWithAuthor(saved);
+	}
+
+	@Override
+	public void deleteReview(String destinationId, String reviewId, String requesterEmail) {
+		if (!destinationRepository.existsById(destinationId)) {
+			throw new ResourceNotFoundException("Destination", destinationId);
+		}
+		Review review = reviewRepository.findById(reviewId)
+				.orElseThrow(() -> new ResourceNotFoundException("Review", reviewId));
+		if (!destinationId.equals(review.getDestinationId())) {
+			throw new ResourceNotFoundException("Review", reviewId);
+		}
+
+		User requester = userRepository.findByEmailIgnoreCase(requesterEmail)
+				.orElseThrow(() -> new ResourceNotFoundException("User", requesterEmail));
+		boolean isAdmin = requester.getRole() == UserRole.ADMIN;
+		boolean isOwner = requesterEmail.equalsIgnoreCase(review.getUserId())
+				|| requester.getId().equals(review.getUserId());
+		if (!isAdmin && !isOwner) {
+			throw new AccessDeniedException("Suppression autorisee uniquement pour l'auteur ou un admin");
+		}
+
+		reviewRepository.delete(review);
 	}
 
 	private ReviewResponse toResponseWithAuthor(Review review) {
